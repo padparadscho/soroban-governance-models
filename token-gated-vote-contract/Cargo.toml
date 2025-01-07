@@ -1,0 +1,24 @@
+[package]
+authors.workspace = true
+description = "Token-gated vote contract - democratic voting system with equal vote weight for all token holders."
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "token-gated-vote-contract"
+publish = false
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[features]
+testutils = []
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

@@ -365,3 +365,5 @@ impl TokenGatedContract {
         Ok(results)
     }
 }
+
+mod test;

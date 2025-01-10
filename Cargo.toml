@@ -1,5 +1,5 @@
 [workspace]
-members = ["token-gated-vote-contract"]
+members = ["token-gated-vote-contract", "token-weighted-vote-contract"]
 resolver = "2"
 
 [workspace.package]

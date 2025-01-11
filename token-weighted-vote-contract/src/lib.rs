@@ -367,3 +367,5 @@ impl TokenWeightedVoteContract {
         Ok(results)
     }
 }
+
+mod test;

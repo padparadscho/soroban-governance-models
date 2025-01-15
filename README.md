@@ -12,6 +12,10 @@ Implements a "**one holder, one vote**" democratic governance model where every 
 
 Implements a "**token balance equals voting power**" plutocratic governance model where each user's vote carries weight proportional to their token balance, creating a system where economic stake determines governance power.
 
+### [Representative Vote Contract](/representative-vote-contract/)
+
+Implements a "**delegated voting**" governance model where token holders assign their voting power to representatives who vote on their behalf, enabling scalable governance while maintaining democratic principles.
+
 ## License
 
 This project is licensed under the [MIT License](/LICENSE).

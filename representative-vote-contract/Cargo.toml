@@ -1,0 +1,24 @@
+[package]
+authors.workspace = true
+description = "Representative vote contract - delegated democratic voting system where token holders assign their voting power to representatives."
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+name = "representative-vote-contract"
+publish = false
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[features]
+testutils = []
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

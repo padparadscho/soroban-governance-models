@@ -739,3 +739,5 @@ impl RepresentativeVoteContract {
         Self::get_delegator_details(env, user)
     }
 }
+
+mod test;

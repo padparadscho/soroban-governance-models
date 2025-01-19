@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "liquid-based-vote-contract",
     "representative-vote-contract",
     "token-gated-vote-contract",
     "token-weighted-vote-contract",

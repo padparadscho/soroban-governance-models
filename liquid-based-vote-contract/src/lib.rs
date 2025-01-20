@@ -676,3 +676,5 @@ impl LiquidBasedVoteContract {
         Ok(results)
     }
 }
+
+mod test;

@@ -16,6 +16,10 @@ Implements a "**token balance equals voting power**" plutocratic governance mode
 
 Implements a "**delegated voting**" governance model where token holders assign their voting power to representatives who vote on their behalf, enabling scalable governance while maintaining democratic principles.
 
+### [Liquid-Based Vote Contract](/liquid-based-vote-contract/)
+
+Implements a "**liquid democracy**" hybrid governance model where users can vote directly with token-weighted power or delegate their voting power to representatives.
+
 ## License
 
 This project is licensed under the [MIT License](/LICENSE).

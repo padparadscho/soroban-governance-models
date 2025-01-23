@@ -20,6 +20,10 @@ Implements a "**delegated voting**" governance model where token holders assign 
 
 Implements a "**liquid democracy**" hybrid governance model where users can vote directly with token-weighted power or delegate their voting power to representatives.
 
+### [Quadratic Vote Contract](/quadratic-vote-contract/)
+
+Implements a "**quadratic voting**" governance model where voting power scales with the square root of tokens spent, reducing the dominance of large token holders, maintaining economic incentives, and creating a more balanced and democratic voting system.
+
 ## License
 
 This project is licensed under the [MIT License](/LICENSE).

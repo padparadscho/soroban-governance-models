@@ -6,68 +6,71 @@ use soroban_sdk::{
     Symbol, Vec,
 };
 
+/// Vote choices
 const VOTE_FOR: Symbol = symbol_short!("FOR");
 const VOTE_AGAINST: Symbol = symbol_short!("AGAINST");
 const VOTE_ABSTAIN: Symbol = symbol_short!("ABSTAIN");
 
+/// Proposal duration limits (in seconds)
 const MAX_PROPOSAL_DURATION: u64 = 1292000;
 const MIN_PROPOSAL_DURATION: u64 = 432000;
 
+/// TTL extensions (in seconds, assuming ~5s per ledger)
 const PROPOSALS_TTL_EXTENSION: u32 = 2_100_000;
 const PROPOSAL_TTL_BUFFER: u32 = 604_800;
 const VOTE_TTL_EXTENSION: u32 = 1_600_000;
 
 #[contracttype]
 pub enum TokenGatedContractDataKey {
-    Admin,
-    Token,
-    Proposal(Symbol),
-    Proposals,
-    Votes(Address),
+    Admin,            // Contract admin address
+    Token,            // Governance token address
+    Proposal(Symbol), // Proposal data keyed by proposal ID
+    Proposals,        // List of all proposal IDs
+    Votes(Address),   // User voting records keyed by user address
 }
 
 #[contracttype]
 #[derive(Clone)]
 pub struct TokenGatedProposalData {
-    pub description: String,
-    pub start_time: u64,
-    pub end_time: u64,
-    pub total_for: i128,
-    pub total_against: i128,
-    pub total_abstain: i128,
+    pub description: String, // Proposal description
+    pub start_time: u64,     // UNIX timestamp when voting starts
+    pub end_time: u64,       // UNIX timestamp when voting ends
+    pub total_for: i128,     // Total voting power cast `FOR`
+    pub total_against: i128, // Total voting power cast `AGAINST`
+    pub total_abstain: i128, // Total voting power cast `ABSTAIN`
 }
 
 #[contracttype]
 #[derive(Clone)]
 pub struct TokenGatedProposalSummary {
-    pub id: Symbol,
-    pub description: String,
-    pub status: TokenGatedProposalStatus,
+    pub id: Symbol,                       // Unique identifier for the proposal
+    pub description: String,              // Brief description of the proposal
+    pub status: TokenGatedProposalStatus, // Lifecycle status of the proposal
 }
 
 #[contracttype]
 #[derive(Clone, Copy)]
 pub enum TokenGatedProposalStatus {
-    Pending,
-    Active,
-    Ended,
+    Pending, // Current time is before `start_time`
+    Active,  // Current time is within `start_time` and `end_time`
+    Ended,   // Current time is after `end_time`
 }
 
 #[contracterror]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TokenGatedContractErrors {
-    ContractNotInitialized = 1,
-    ContractAlreadyInitialized = 2,
-    ProposalAlreadyExists = 3,
-    ProposalNotFound = 4,
-    UserAlreadyVoted = 5,
-    UserCannotVote = 6,
-    VotingNotActive = 7,
-    InvalidChoice = 8,
-    StartTimeAfterEnd = 9,
-    StartTimeInPast = 10,
-    DurationTooLong = 11,
-    DurationTooShort = 12,
+    ContractNotInitialized = 1,     // The contract has not been initialized
+    ContractAlreadyInitialized = 2, // The contract has already been initialized
+    ProposalAlreadyExists = 3,      // A proposal with this ID already exists
+    ProposalNotFound = 4,           // No proposal found with the given ID
+    UserAlreadyVoted = 5,           // User has already voted on this proposal
+    UserCannotVote = 6,             // User does not hold the required token
+    VotingNotActive = 7,            // The proposal is not currently active for voting
+    InvalidChoice = 8,              // The vote choice is invalid
+    StartTimeAfterEnd = 9,          // Proposal start time occurs after end time
+    StartTimeInPast = 10,           // Proposal start time is before current timestamp
+    DurationTooLong = 11,           // Proposal duration exceeds maximum allowed period
+    DurationTooShort = 12,          // Proposal duration is below minimum required period
 }
 
 #[contract]
@@ -75,6 +78,12 @@ pub struct TokenGatedContract;
 
 #[contractimpl]
 impl TokenGatedContract {
+    // --- Helper Functions ---
+
+    /// Derives TTL extension for a proposal based on the current ledger time
+    ///
+    /// # Arguments
+    /// * `proposal_end_time` - The end time of the proposal
     fn calculate_proposal_ttl(env: &Env, proposal_end_time: u64) -> u32 {
         let ledger_time = env.ledger().timestamp();
         let proposal_duration = if proposal_end_time > ledger_time {
@@ -87,6 +96,11 @@ impl TokenGatedContract {
         min_ttl.max(PROPOSALS_TTL_EXTENSION)
     }
 
+    /// Computes proposal's status relative to the given ledger timestamp
+    ///
+    /// # Arguments
+    /// * `ledger_time` - The current ledger timestamp
+    /// * `proposal` - The proposal data to evaluate
     fn compute_proposal_status(
         ledger_time: u64,
         proposal: &TokenGatedProposalData,
@@ -100,6 +114,12 @@ impl TokenGatedContract {
         }
     }
 
+    /// Validates proposal start and end times against ledger time and duration bounds
+    ///
+    /// # Arguments
+    /// * `ledger_time` - The current ledger timestamp
+    /// * `start_time` - The proposed start time
+    /// * `end_time` - The proposed end time
     fn validate_proposal_times(
         ledger_time: u64,
         start_time: u64,
@@ -121,6 +141,13 @@ impl TokenGatedContract {
         Ok(())
     }
 
+    // --- Write Functions ---
+
+    /// Initializes contract with `admin` and `token` addresses
+    ///
+    /// # Arguments
+    /// * `admin` - The address of the contract admin
+    /// * `token` - The address of the governance token
     pub fn __constructor(
         env: Env,
         admin: Address,
@@ -142,6 +169,13 @@ impl TokenGatedContract {
         Ok(())
     }
 
+    /// Creates a proposal after validating timing and uniqueness
+    ///
+    /// # Arguments
+    /// * `id` - The unique identifier for the proposal
+    /// * `description` - The description of the proposal
+    /// * `start_time` - The start time of the proposal
+    /// * `end_time` - The end time of the proposal
     pub fn create_proposal(
         env: Env,
         id: Symbol,
@@ -198,6 +232,12 @@ impl TokenGatedContract {
         Ok(())
     }
 
+    /// Casts a vote on an active proposal after validating user eligibility and vote choice
+    ///
+    /// # Arguments
+    /// * `user` - The address of the voter
+    /// * `id` - The unique identifier for the proposal
+    /// * `choice` - The vote choice (`FOR`, `AGAINST`, `ABSTAIN`)
     pub fn vote(
         env: Env,
         user: Address,
@@ -268,6 +308,10 @@ impl TokenGatedContract {
         Ok(())
     }
 
+    /// Transfers admin role to a `new_admin` address
+    ///
+    /// # Arguments
+    /// * `new_admin` - The address of the new admin
     pub fn transfer_admin(env: Env, new_admin: Address) -> Result<(), TokenGatedContractErrors> {
         let current_admin: Address = env
             .storage()
@@ -286,6 +330,9 @@ impl TokenGatedContract {
         Ok(())
     }
 
+    // --- Read-Only Functions ---
+
+    /// Returns summaries for all proposals
     pub fn get_governance_details(env: Env) -> Vec<TokenGatedProposalSummary> {
         let proposals: Vec<Symbol> = env
             .storage()
@@ -315,6 +362,10 @@ impl TokenGatedContract {
         summary
     }
 
+    /// Returns detailed information for a specific proposal
+    ///
+    /// # Arguments
+    /// * `id` - The unique identifier for the proposal
     pub fn get_proposal_details(
         env: Env,
         id: Symbol,
@@ -327,6 +378,10 @@ impl TokenGatedContract {
         Ok(proposal)
     }
 
+    /// Returns a user's vote participation and eligibility per proposal
+    ///
+    /// # Arguments
+    /// * `user` - The address of the user to query
     pub fn get_user_details(
         env: Env,
         user: Address,
@@ -366,4 +421,5 @@ impl TokenGatedContract {
     }
 }
 
+// --- Test Module ---
 mod test;

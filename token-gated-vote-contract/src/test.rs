@@ -37,6 +37,8 @@ fn setup_test_env() -> Env {
     e
 }
 
+// Tests successful contract initialization with admin and token configuration
+// Expects: Empty governance details list confirming contract is ready for proposals
 #[test]
 fn test_initialization() {
     let e = setup_test_env();
@@ -52,6 +54,8 @@ fn test_initialization() {
     assert_eq!(governance_details.len(), 0);
 }
 
+// Tests contract re initialization failure on already initialized contract
+// Expects: ContractAlreadyInitialized error (Error #2) to prevent state reset
 #[test]
 #[should_panic(expected = "Error(Contract, #2)")]
 fn test_reinitialization() {
@@ -74,6 +78,8 @@ fn test_reinitialization() {
     );
 }
 
+// Tests successful proposal creation by admin with valid timing parameters
+// Expects: Proposal appears in governance details list with correct ID and metadata
 #[test]
 fn test_create_proposal() {
     let e = setup_test_env();
@@ -95,6 +101,8 @@ fn test_create_proposal() {
     assert_eq!(governance_details.get(0).unwrap().id, proposal_id);
 }
 
+// Tests start time after end time validation
+// Expects: StartTimeAfterEnd error (Error #9) when end time is before start time
 #[test]
 #[should_panic(expected = "Error(Contract, #9)")]
 fn test_start_time_after_end() {
@@ -112,6 +120,8 @@ fn test_start_time_after_end() {
     client.create_proposal(&proposal_id, &description, &start_time, &end_time);
 }
 
+// Tests start time in past validation
+// Expects: StartTimeInPast error (Error #10) when start time is before current timestamp
 #[test]
 #[should_panic(expected = "Error(Contract, #10)")]
 fn test_start_time_in_past() {
@@ -129,6 +139,8 @@ fn test_start_time_in_past() {
     client.create_proposal(&proposal_id, &description, &start_time, &end_time);
 }
 
+// Tests duration too long validation
+// Expects: DurationTooLong error (Error #11) when proposal duration exceeds maximum (15 days)
 #[test]
 #[should_panic(expected = "Error(Contract, #11)")]
 fn test_duration_too_long() {
@@ -146,6 +158,8 @@ fn test_duration_too_long() {
     client.create_proposal(&proposal_id, &description, &start_time, &end_time);
 }
 
+// Tests duration too short validation
+// Expects: DurationTooShort error (Error #12) when proposal duration is below minimum (5 days)
 #[test]
 #[should_panic(expected = "Error(Contract, #12)")]
 fn test_duration_too_short() {
@@ -163,6 +177,8 @@ fn test_duration_too_short() {
     client.create_proposal(&proposal_id, &description, &start_time, &end_time);
 }
 
+// Tests duplicate proposal creation rejection
+// Expects: ProposalAlreadyExists error (Error #3) to maintain proposal uniqueness
 #[test]
 #[should_panic(expected = "Error(Contract, #3)")]
 fn test_proposal_already_exists() {
@@ -183,6 +199,8 @@ fn test_proposal_already_exists() {
     client.create_proposal(&proposal_id, &description, &start_time, &end_time);
 }
 
+// Tests voting with three users casting different vote types
+// Expects: Each vote counts equally (weight=1) regardless of token balance differences
 #[test]
 fn test_vote() {
     let e = setup_test_env();
@@ -223,6 +241,8 @@ fn test_vote() {
     }
 }
 
+// Tests voting exactly at inclusive boundaries start_time and end_time
+// Expects: Reject 1s before start, accept at start and end, reject 1s after end
 #[test]
 fn test_vote_boundary_inclusive() {
     let e = setup_test_env();
@@ -276,6 +296,8 @@ fn test_vote_boundary_inclusive() {
     assert_eq!(details.total_abstain, 0);
 }
 
+// Tests voting on non-existent proposal
+// Expects: ProposalNotFound error (Error #4) to protect against invalid access
 #[test]
 #[should_panic(expected = "Error(Contract, #4)")]
 fn test_proposal_not_found() {
@@ -294,6 +316,8 @@ fn test_proposal_not_found() {
     client.vote(&user, &non_existent_proposal, &symbol_short!("FOR"));
 }
 
+// Tests prevention of multiple votes by same user on same proposal
+// Expects: UserAlreadyVoted error (Error #5) to maintain voting integrity
 #[test]
 #[should_panic(expected = "Error(Contract, #5)")]
 fn test_user_already_voted() {
@@ -325,6 +349,8 @@ fn test_user_already_voted() {
     client.vote(&user, &proposal_id, &symbol_short!("AGAINST"));
 }
 
+// Tests token-gated access control for users without governance tokens
+// Expects: UserCannotVote error (Error #6) to enforce token holder only participation
 #[test]
 #[should_panic(expected = "Error(Contract, #6)")]
 fn test_user_cannot_vote() {
@@ -350,6 +376,8 @@ fn test_user_cannot_vote() {
     client.vote(&user, &proposal_id, &symbol_short!("FOR"));
 }
 
+// Tests voting outside active voting period (before start time)
+// Expects: VotingNotActive error (Error #7) to enforce proper timing constraints
 #[test]
 #[should_panic(expected = "Error(Contract, #7)")]
 fn test_voting_not_active() {
@@ -374,6 +402,8 @@ fn test_voting_not_active() {
     client.vote(&user, &proposal_id, &symbol_short!("FOR"));
 }
 
+// Tests voting with invalid choice option (not FOR/AGAINST/ABSTAIN)
+// Expects: InvalidChoice error (Error #8) to enforce standardized vote options
 #[test]
 #[should_panic(expected = "Error(Contract, #8)")]
 fn test_invalid_choice() {
@@ -402,6 +432,8 @@ fn test_invalid_choice() {
     client.vote(&user, &proposal_id, &symbol_short!("INVALID"));
 }
 
+// Tests secure admin privilege transfer to new address
+// Expects: Successful transfer without errors, maintaining operational continuity
 #[test]
 fn test_transfer_admin() {
     let e = setup_test_env();
@@ -415,6 +447,8 @@ fn test_transfer_admin() {
     assert!(result.is_ok());
 }
 
+// Tests governance overview retrieval with multiple proposals
+// Expects: Complete list of all proposals with essential metadata (IDs, descriptions)
 #[test]
 fn test_get_governance_details() {
     let e = setup_test_env();
@@ -448,6 +482,8 @@ fn test_get_governance_details() {
     assert!(has_prop2);
 }
 
+// Tests individual proposal details retrieval including vote tallies
+// Expects: Complete proposal data with timing, description, and initialized vote counts
 #[test]
 fn test_get_proposal_details() {
     let e = setup_test_env();
@@ -473,6 +509,8 @@ fn test_get_proposal_details() {
     assert_eq!(details.total_abstain, 0);
 }
 
+// Tests user voting history and eligibility information retrieval
+// Expects: Non empty user details containing voting participation and eligibility status
 #[test]
 fn test_get_user_details() {
     let e = setup_test_env();
